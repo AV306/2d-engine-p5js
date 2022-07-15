@@ -96,6 +96,8 @@ class Sprite
   halfSize; // precomputed
   texbuf; // p5.Image
   
+  physics;
+  
   constructor( pos, size, texbuf )
   {
     this.pos = pos;
@@ -103,10 +105,13 @@ class Sprite
     this.halfSize = this.size.divideScalar( 2 );
     this.texbuf = texbuf;
     this.v = new Vec2( 0, 0 );
+    
+    this.physics = new PhysicsEngine( this );
   }
   
   updatePos()
   {
+    this.physics.tick();
     this.pos = this.pos.addVec( this.v );
     
     //console.log( this.v );
@@ -119,19 +124,23 @@ class Sprite
     if ( this.pos.x > halfW - this.halfSize.x )
     {
       this.pos.x = halfW - this.halfSize.x;
+      this.v.x = 0;
     }
     else if ( this.pos.x < -halfW + this.halfSize.x )
     {
       this.pos.x = -halfW + this.halfSize.y;
+      this.v.x = 0;
     }
     
     if ( this.pos.y > halfH - this.halfSize.y )
     {
       this.pos.y = halfH - this.halfSize.y;
+      this.v.y = 0;
     }
     else if ( this.pos.y < -halfH + this.halfSize.y )
     {
       this.pos.y = -halfH + this.halfSize.y;
+      this.v.y = 0;
     }
   }
   
@@ -166,29 +175,35 @@ class Player extends Sprite
   {
     //console.log( "handleMovement" )
     //console.log( keyIsDown( "EFT_ARROW" ) )
-    if ( keyIsDown( LEFT_ARROW ) )
+    if ( keyIsDown( LEFT_ARROW ) || keyIsDown( 65 ) )
     {
       this.v.x = -this.speed;
       //console.log( "left" )
     }
-    else if ( keyIsDown( RIGHT_ARROW ) )
+    else if ( keyIsDown( RIGHT_ARROW ) || keyIsDown( 68 ) )
     {
       this.v.x = this.speed;
       //console.log( "right" )
     }
     else this.v.x = 0;
     
-    if ( keyIsDown( DOWN_ARROW ) )
+    /*if ( keyIsDown( DOWN_ARROW ) || keyIsDown( 83 ) )
     {
       this.v.y = -this.speed;
       //console.log( "down" )
     }
-    else if ( keyIsDown( UP_ARROW ) )
+    else if ( keyIsDown( UP_ARROW ) || keyIsDown( 87 ) )
     {
       this.v.y = this.speed;
       //console.log( "up" )
     }
-    else this.v.y = 0;
+    else this.v.y = 0;*/
+    
+    if ( keyIsDown( 32 ) )
+    {
+      // jump
+      this.v.y += 5;
+    }
   }
   
   blit()
@@ -199,6 +214,43 @@ class Player extends Sprite
   }
 }
 
+class PhysicsEngine
+{
+  tps;
+  deltaGoal; // optimisation var; don't bother
+  gravityScale;
+  
+  terminalV;
+  
+  sprite;
+  
+  constructor( sprite, tps = 10, gs = 1 )
+  {
+    this.sprite = sprite;
+    
+    this.tps = tps;
+    this.gravityScale = gs;
+    
+    this.deltaGoal = 30 / tps;
+    
+    this.terminalV = this.gravityScale * 10;
+  }
+  
+  tick()
+  {
+    //console.log( frameCount );
+    if ( frameCount % this.deltaGoal != 0 ) return;
+    
+    //if ( this.sprite.v.y < -this.terminalV )
+    this.sprite.v.y -= 3;
+    
+    //else this.sprite.v.y = 0;
+    
+    console.log( this.sprite.v.y )
+    
+  }
+}
+
 var halfW;
 var halfH;
 
@@ -206,17 +258,20 @@ var playerTex;
 
 var p;
 var obstacle;
-function setup() {
-  createCanvas(400, 400);
+function setup()
+{
+  createCanvas( 600, 600 );
+  
+  frameRate( 30 );
   
   halfW = width/2;
   halfH = height/2;
   
-  playerTex = createGraphics( 20, 20 );
-  playerTex.background( 0 );
-  playerTex.ellipse( playerTex.width/2, playerTex.height/2, playerTex.width, playerTex.height );
-  
-  p = new Player( new Vec2( 0, 0 ), new Vec2( 20, 20 ), playerTex );
+  p = new Player(
+    new Vec2( 0, 0 ),
+    new Vec2( 20, 20 ),
+    genPlayerTex()
+  );
   
   obstacle = new Sprite(
     new Vec2( 0, -halfH ),
@@ -225,14 +280,27 @@ function setup() {
   );
 }
 
-function draw() {
+function draw()
+{
   background( 255 );
   
-  line( 0, height/2, width, height/2 );
-  line( width/2, 0, width/2, height );
+  //line( 0, height/2, width, height/2 );
+  //line( width/2, 0, width/2, height );
   
   //image( tex, 0, 0)
   
   p.blit();
   //obstacle.blit();
+}
+
+function genPlayerTex()
+{
+  var texbuf = createGraphics( 32, 32 );
+  //atexbuf.background( 0 );
+  texbuf.translate( texbuf.width/2, texbuf.height/2 );
+  texbuf.noStroke();
+  texbuf.fill( 0, 0, 255 );
+  texbuf.ellipse( 0, 0, texbuf.width, texbuf.height );
+  
+  return texbuf;
 }
