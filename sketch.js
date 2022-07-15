@@ -185,7 +185,14 @@ class Player extends Sprite
       this.v.x = this.speed;
       //console.log( "right" )
     }
-    else this.v.x = 0;
+    else
+    {
+      // move v.x towards 0
+      if ( this.v.x > 0 )
+        this.v.x -= 1;
+      else if ( this.v.x < 0 )
+        this.v.x += 1;
+    }
     
     /*if ( keyIsDown( DOWN_ARROW ) || keyIsDown( 83 ) )
     {
@@ -202,7 +209,7 @@ class Player extends Sprite
     if ( keyIsDown( 32 ) )
     {
       // jump
-      this.v.y += 5;
+      this.v.y += 3;
     }
   }
   
@@ -257,7 +264,7 @@ var halfH;
 var playerTex;
 
 var p;
-var obstacle;
+var obstacles = [];
 function setup()
 {
   createCanvas( 600, 600 );
@@ -273,10 +280,12 @@ function setup()
     genPlayerTex()
   );
   
-  obstacle = new Sprite(
-    new Vec2( 0, -halfH ),
-    new Vec2( width, 10 ),
-    playerTex
+  obstacles.push(
+    new Sprite(
+      new Vec2( 0, -halfH ),
+      new Vec2( width, 10 ),
+      genPlayerTex()
+    )
   );
 }
 
@@ -290,7 +299,11 @@ function draw()
   //image( tex, 0, 0)
   
   p.blit();
-  //obstacle.blit();
+  
+  for ( var obstacle of obstacles )
+  {
+    obstacle.blit();
+  }
 }
 
 function genPlayerTex()
