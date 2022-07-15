@@ -109,45 +109,34 @@ class Sprite
     this.physics = new PhysicsEngine( this );
   }
   
-  updatePos()
+  checkCollisionInsideBounds( xMin, xMax, yMin, yMax )
   {
-    this.physics.tick();
-    this.pos = this.pos.addVec( this.v );
-    
-    //console.log( this.v );
-    
-    this.checkCollision();
-  }
-  
-  checkCollision()
-  {
-    if ( this.pos.x > halfW - this.halfSize.x )
+    // check for screen bounds collision
+    if ( this.pos.x > xMax - this.halfSize.x )
     {
-      this.pos.x = halfW - this.halfSize.x;
+      this.pos.x = xMax - this.halfSize.x;
       this.v.x = 0;
     }
-    else if ( this.pos.x < -halfW + this.halfSize.x )
+    else if ( this.pos.x < xMin + this.halfSize.x )
     {
-      this.pos.x = -halfW + this.halfSize.y;
+      this.pos.x = xMin + this.halfSize.y;
       this.v.x = 0;
     }
     
-    if ( this.pos.y > halfH - this.halfSize.y )
+    if ( this.pos.y > yMax - this.halfSize.y )
     {
-      this.pos.y = halfH - this.halfSize.y;
+      this.pos.y = yMax - this.halfSize.y;
       this.v.y = 0;
     }
-    else if ( this.pos.y < -halfH + this.halfSize.y )
+    else if ( this.pos.y < yMin + this.halfSize.y )
     {
-      this.pos.y = -halfH + this.halfSize.y;
+      this.pos.y = yMin + this.halfSize.y;
       this.v.y = 0;
     }
   }
   
   blit()
   {
-    this.updatePos();
-    
     var temp = this.pos.convertPos();
     
     image(
@@ -213,10 +202,33 @@ class Player extends Sprite
     }
   }
   
+  updatePos()
+  {
+    this.physics.tick();
+    this.pos = this.pos.addVec( this.v );
+    
+    //console.log( this.v );
+    
+    this.checkCollision();
+  }
+  
+  checkCollision()
+  {
+    // obstacle collision    
+    for ( var obstacle of obstacles )
+    {
+      
+    }
+    
+    // screen bounds collision
+    this.checkCollisionInsideBounds( -halfW, halfW, -halfH, halfH );
+  }
+  
   blit()
   {
     // coming from a Java background, this is both familiar and weird
     this.handleMovement();
+    this.updatePos();
     super.blit();
   }
 }
@@ -253,7 +265,7 @@ class PhysicsEngine
     
     //else this.sprite.v.y = 0;
     
-    console.log( this.sprite.v.y )
+    //console.log( this.sprite.v.y )
     
   }
 }
@@ -309,7 +321,7 @@ function draw()
 function genPlayerTex()
 {
   var texbuf = createGraphics( 32, 32 );
-  //atexbuf.background( 0 );
+  texbuf.background( 0 );
   texbuf.translate( texbuf.width/2, texbuf.height/2 );
   texbuf.noStroke();
   texbuf.fill( 0, 0, 255 );
