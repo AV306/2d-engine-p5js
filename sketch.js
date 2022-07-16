@@ -44,6 +44,22 @@ class Vec2
     );
   }
   
+  multVec( other )
+  {
+    return new Vec2(
+      this.x * other.x,
+      this.y * other.y
+    );
+  }
+  
+  multScalar( s )
+  {
+    return new Vec2(
+      this.x * s,
+      this.y * s
+    );
+  }
+  
   divideScalar( s )
   {
     return new Vec2(
@@ -96,9 +112,11 @@ class Sprite
   halfSize; // precomputed
   texbuf; // p5.Image
   
+  boundingSphereRadius; // precomputed; TODO: does not account for scaling of objects
+  
   physics;
   
-  constructor( pos, size, texbuf )
+  constructor( pos, size, texbuf, active )
   {
     this.pos = pos;
     this.size = size;
@@ -106,7 +124,10 @@ class Sprite
     this.texbuf = texbuf;
     this.v = new Vec2( 0, 0 );
     
-    this.physics = new PhysicsEngine( this );
+    if ( active )
+      this.physics = new PhysicsEngine( this );
+    
+    this.boundingSphereRadius = sqrt( this.size.x**2 + this.size.y**2 ) / 2;
   }
   
   checkCollisionInsideBounds( xMin, xMax, yMin, yMax )
@@ -135,6 +156,28 @@ class Sprite
     }
   }
   
+  checkCollisionWithSprite( sprite )
+  {
+    // step 1. Bounding sphere check
+      
+    // compute the distance between us and the sprite
+    var d = new Vec2(
+      this.pos.x - sprite.pos.x,
+      this.pos.y - sprite.pos.y
+    ).magnitude();
+      
+    // compute te sum of the radii of bounding circles
+    var r = this.boundingSphereRadius + sprite.boundingSphereRadius;
+    //console.log( d )
+    
+    // check
+    // these bounding spheres are purposely LARGER
+    // than the objects themselves
+    return d < r;
+    
+    // TODO: implement more tests, using the bounding sphere as a guide
+  }
+  
   blit()
   {
     var temp = this.pos.convertPos();
@@ -155,9 +198,9 @@ class Player extends Sprite
   
   constructor( pos, size, texbuf )
   {
-    super( pos, size, texbuf );
+    super( pos, size, texbuf, true );
     
-    this.speed = 10;
+    this.speed = 20;
   }
   
   handleMovement()
@@ -178,9 +221,9 @@ class Player extends Sprite
     {
       // move v.x towards 0
       if ( this.v.x > 0 )
-        this.v.x -= 1;
+        this.v.x -= 10;
       else if ( this.v.x < 0 )
-        this.v.x += 1;
+        this.v.x += 10;
     }
     
     /*if ( keyIsDown( DOWN_ARROW ) || keyIsDown( 83 ) )
@@ -195,21 +238,21 @@ class Player extends Sprite
     }
     else this.v.y = 0;*/
     
-    if ( keyIsDown( 32 ) )
+    if ( keyIsDown( 32 ) || keyIsDown( 87 ) || keyIsDown( UP_ARROW ) )
     {
       // jump
-      this.v.y += 3;
+      this.v.y += this.speed * 0.6;
     }
   }
   
   updatePos()
   {
-    this.physics.tick();
-    this.pos = this.pos.addVec( this.v );
+    this.physics.tick(); // add gravity
+    
+    this.pos = this.pos.addVec( this.v.multScalar( deltaTime/100 ) ); // update its position
     
     //console.log( this.v );
-    
-    this.checkCollision();
+    this.checkCollision(); // correct its new position if needed
   }
   
   checkCollision()
@@ -217,7 +260,10 @@ class Player extends Sprite
     // obstacle collision    
     for ( var obstacle of obstacles )
     {
-      
+      if ( obstacle.checkCollisionWithSprite( this ) )
+      {
+        this.v.y = 0;
+      }
     }
     
     // screen bounds collision
@@ -252,7 +298,7 @@ class PhysicsEngine
     
     this.deltaGoal = 30 / tps;
     
-    this.terminalV = this.gravityScale * 10;
+    this.terminalV = this.gravityScale * 20;
   }
   
   tick()
@@ -260,15 +306,26 @@ class PhysicsEngine
     //console.log( frameCount );
     if ( frameCount % this.deltaGoal != 0 ) return;
     
-    //if ( this.sprite.v.y < -this.terminalV )
-    this.sprite.v.y -= 3;
-    
-    //else this.sprite.v.y = 0;
-    
-    //console.log( this.sprite.v.y )
-    
+    if ( this.sprite.v.y > -this.terminalV )
+      this.sprite.v.y -= this.gravityScale * 10;    
   }
 }
+
+// TODO: use this class in collision detection
+class Collider
+{
+  vertices = [];
+}
+
+
+
+
+
+
+
+// +------------+
+// | Scene code |
+// +------------+
 
 var halfW;
 var halfH;
@@ -289,14 +346,14 @@ function setup()
   p = new Player(
     new Vec2( 0, 0 ),
     new Vec2( 20, 20 ),
-    genPlayerTex()
+    genTestTex()
   );
   
   obstacles.push(
     new Sprite(
-      new Vec2( 0, -halfH ),
-      new Vec2( width, 10 ),
-      genPlayerTex()
+      new Vec2( 0, -100 ),
+      new Vec2( 80, 80 ),
+      genTestTex()
     )
   );
 }
@@ -310,22 +367,33 @@ function draw()
   
   //image( tex, 0, 0)
   
-  p.blit();
+  
   
   for ( var obstacle of obstacles )
   {
     obstacle.blit();
   }
+  
+  p.blit();
 }
 
-function genPlayerTex()
+function genTestTex()
 {
   var texbuf = createGraphics( 32, 32 );
   texbuf.background( 0 );
   texbuf.translate( texbuf.width/2, texbuf.height/2 );
   texbuf.noStroke();
-  texbuf.fill( 0, 0, 255 );
+  texbuf.fill( randomCol() );
   texbuf.ellipse( 0, 0, texbuf.width, texbuf.height );
   
   return texbuf;
+}
+
+function randomCol()
+{
+  return [
+    floor(random() * 256),
+    floor(random() * 256),
+    floor(random() * 256)
+  ];
 }
