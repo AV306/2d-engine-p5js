@@ -1,3 +1,11 @@
+/**
+ * 2D Game Engine
+ *
+ * Project codename: Jay2D
+ *
+ * Description: A 2D game engine with physics.
+ */
+
 class Vec2
 {
   x;
@@ -114,9 +122,10 @@ class Sprite
   
   boundingSphereRadius; // precomputed; TODO: does not account for scaling of objects
   
+  active;
   physics;
   
-  constructor( pos, size, texbuf, active )
+  constructor( pos, size, texbuf, active = false )
   {
     this.pos = pos;
     this.size = size;
@@ -124,10 +133,28 @@ class Sprite
     this.texbuf = texbuf;
     this.v = new Vec2( 0, 0 );
     
-    if ( active )
+    this.active = active;
+    
+    if ( this.active )
       this.physics = new PhysicsEngine( this );
     
     this.boundingSphereRadius = sqrt( this.size.x**2 + this.size.y**2 ) / 2;
+  }
+  
+  updatePos()
+  {
+    if ( this.active )
+      this.physics.tick(); // add gravity
+    
+    this.pos = this.pos.addVec( this.v.multScalar( deltaTime/100 ) ); // update its position
+    
+    if ( this.active )
+      this.checkCollision();
+  }
+  
+  checkCollision()
+  {
+    this.checkCollisionInsideBounds( -halfW, halfW, -halfH, halfH );
   }
   
   checkCollisionInsideBounds( xMin, xMax, yMin, yMax )
@@ -180,6 +207,8 @@ class Sprite
   
   blit()
   {
+    this.updatePos();
+    
     var temp = this.pos.convertPos();
     
     image(
@@ -247,12 +276,7 @@ class Player extends Sprite
   
   updatePos()
   {
-    this.physics.tick(); // add gravity
-    
-    this.pos = this.pos.addVec( this.v.multScalar( deltaTime/100 ) ); // update its position
-    
-    //console.log( this.v );
-    this.checkCollision(); // correct its new position if needed
+    super.updatePos();
   }
   
   checkCollision()
@@ -267,14 +291,17 @@ class Player extends Sprite
     }
     
     // screen bounds collision
-    this.checkCollisionInsideBounds( -halfW, halfW, -halfH, halfH );
+    super.checkCollision();
   }
   
   blit()
   {
     // coming from a Java background, this is both familiar and weird
+    
+    // control
     this.handleMovement();
-    this.updatePos();
+    
+    // position ticking and rendering
     super.blit();
   }
 }
@@ -332,17 +359,25 @@ var halfH;
 
 var playerTex;
 
+var currentFps = 0;
+
 var p;
 var obstacles = [];
+
 function setup()
 {
   createCanvas( 600, 600 );
   
+  // configurations
   frameRate( 30 );
+  textSize( 30 );
+  textAlign( LEFT, TOP );
   
+  // convenience vars
   halfW = width/2;
   halfH = height/2;
   
+  // scene setup
   p = new Player(
     new Vec2( 0, 0 ),
     new Vec2( 20, 20 ),
@@ -353,7 +388,8 @@ function setup()
     new Sprite(
       new Vec2( 0, -100 ),
       new Vec2( 80, 80 ),
-      genTestTex()
+      genTestTex(),
+      false
     )
   );
 }
@@ -375,6 +411,17 @@ function draw()
   }
   
   p.blit();
+  
+  // draw debug text
+  if ( frameCount % 5 == 0 )
+    currentFps = floor( 1000 / deltaTime );
+  
+  noStroke();
+  fill( 0 );
+  text(
+    `FPS: ${currentFps}`,
+    0, 0
+  );
 }
 
 function genTestTex()
