@@ -81,9 +81,23 @@ class Vec2
     return (this.x * other.x) + (this.y * other.y);
   }
   
+  angleFrom( other )
+  {
+    return acos( this.dot( other ) / (this.length * other.length ) );
+  }
+  
   magnitude()
   {
     return this.length;
+  }
+  
+  normalise()
+  {
+    if ( this.length == 0 ) return new Vec2( 0, 0 );
+    else return new Vec2(
+      this.x / this.length,
+      this.y / this.length
+    );
   }
   
   inverseX()
@@ -120,12 +134,12 @@ class Sprite
   halfSize; // precomputed
   texbuf; // p5.Image
   
-  boundingSphereRadius; // precomputed; TODO: does not account for scaling of objects
+  collider; // ? extends ColliderShape
   
-  active;
+  active; // boolean; does this object move?
   physics;
   
-  constructor( pos, size, texbuf, active = false )
+  constructor( pos, size, texbuf, collider, active = false )
   {
     this.pos = pos;
     this.size = size;
@@ -133,12 +147,12 @@ class Sprite
     this.texbuf = texbuf;
     this.v = new Vec2( 0, 0 );
     
+    this.collider = collider;
+    
     this.active = active;
     
     if ( this.active )
       this.physics = new PhysicsEngine( this );
-    
-    this.boundingSphereRadius = sqrt( this.size.x**2 + this.size.y**2 ) / 2;
   }
   
   updatePos()
@@ -183,28 +197,6 @@ class Sprite
     }
   }
   
-  checkCollisionWithSprite( sprite )
-  {
-    // step 1. Bounding sphere check
-      
-    // compute the distance between us and the sprite
-    var d = new Vec2(
-      this.pos.x - sprite.pos.x,
-      this.pos.y - sprite.pos.y
-    ).magnitude();
-      
-    // compute te sum of the radii of bounding circles
-    var r = this.boundingSphereRadius + sprite.boundingSphereRadius;
-    //console.log( d )
-    
-    // check
-    // these bounding spheres are purposely LARGER
-    // than the objects themselves
-    return d < r;
-    
-    // TODO: implement more tests, using the bounding sphere as a guide
-  }
-  
   blit()
   {
     this.updatePos();
@@ -218,6 +210,10 @@ class Sprite
       this.size.x,
       this.size.y
     );
+    
+    /*stroke( 0 );
+    fill( 255 );
+    circle( temp.x, temp.y, this.collider.boundingSphereRadius * 2 );*/
   }
 }
 
@@ -225,9 +221,9 @@ class Player extends Sprite
 {
   speed;
   
-  constructor( pos, size, texbuf )
+  constructor( pos, size, texbuf, collider )
   {
-    super( pos, size, texbuf, true );
+    super( pos, size, texbuf, collider, true );
     
     this.speed = 20;
   }
@@ -274,6 +270,20 @@ class Player extends Sprite
     }
   }
   
+  boundingSphereCollision( other )
+  {
+    var r = this.collider.boundingSphereRadius + other.collider.boundingSphereRadius;
+    
+    var d = new Vec2(
+      this.pos.x - other.pos.x,
+      this.pos.y - other.pos.y
+    ).magnitude();
+    
+    //console.log( d );
+    
+    return d < r;
+  }
+  
   updatePos()
   {
     super.updatePos();
@@ -281,17 +291,19 @@ class Player extends Sprite
   
   checkCollision()
   {
+    super.checkCollision(); // Screen bounds collision
+
     // obstacle collision    
     for ( var obstacle of obstacles )
     {
-      if ( obstacle.checkCollisionWithSprite( this ) )
+      //console.log( obstacle )
+      //this.pos = new Vec2( 0, 200 );
+      if ( this.boundingSphereCollision( obstacle ) )
       {
-        this.v.y = 0;
+        // snap it to the surface of the collider
+        this.v = this.v.normalise();
       }
     }
-    
-    // screen bounds collision
-    super.checkCollision();
   }
   
   blit()
@@ -325,7 +337,7 @@ class PhysicsEngine
     
     this.deltaGoal = 30 / tps;
     
-    this.terminalV = this.gravityScale * 20;
+    this.terminalV = this.gravityScale * 50;
   }
   
   tick()
@@ -334,15 +346,52 @@ class PhysicsEngine
     if ( frameCount % this.deltaGoal != 0 ) return;
     
     if ( this.sprite.v.y > -this.terminalV )
-      this.sprite.v.y -= this.gravityScale * 10;    
+      this.sprite.v.y -= this.gravityScale * 15;    
   }
 }
 
 // TODO: use this class in collision detection
-class Collider
+class ColliderShape
 {
-  vertices = [];
+  vertices; // array
+  
+  boundingSphereRadius; // Number
+  
+  constructor( vertices )
+  {
+    this.vertices = vertices;
+    
+    // TODO: calculate the bounding aphere
+  }
 }
+
+class RectCollider extends ColliderShape
+{
+  constructor( width, height )
+  {
+    super(
+      [
+        new Vec2( -width/2, height/2 ),
+        new Vec2( width/2, height/2 ),
+        new Vec2( width/2, -height/2 ),
+        new Vec2( -width/2, -height/2 )
+      ] 
+    );
+    
+    this.boundingSphereRadius = sqrt( width**2 + height**2 );
+  }
+}
+
+class CircleCollider extends ColliderShape
+{
+  constructor( radius )
+  {
+    super( [] );
+    
+    this.boundingSphereRadius = radius;
+  }
+}
+
 
 
 
@@ -369,9 +418,10 @@ function setup()
   createCanvas( 600, 600 );
   
   // configurations
-  frameRate( 30 );
+  frameRate( -1 );
   textSize( 30 );
   textAlign( LEFT, TOP );
+  angleMode( DEGREES );
   
   // convenience vars
   halfW = width/2;
@@ -381,7 +431,8 @@ function setup()
   p = new Player(
     new Vec2( 0, 0 ),
     new Vec2( 20, 20 ),
-    genTestTex()
+    genTestTex(),
+    new CircleCollider( 10 )
   );
   
   obstacles.push(
@@ -389,6 +440,7 @@ function setup()
       new Vec2( 0, -100 ),
       new Vec2( 80, 80 ),
       genTestTex(),
+      new CircleCollider( 40 ),
       false
     )
   );
@@ -427,7 +479,7 @@ function draw()
 function genTestTex()
 {
   var texbuf = createGraphics( 32, 32 );
-  texbuf.background( 0 );
+  //texbuf.background( 0 );
   texbuf.translate( texbuf.width/2, texbuf.height/2 );
   texbuf.noStroke();
   texbuf.fill( randomCol() );
