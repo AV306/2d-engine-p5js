@@ -301,8 +301,10 @@ class Player extends Sprite
       if ( this.boundingSphereCollision( obstacle ) )
       {
         // snap it to the surface of the collider
-        this.v = this.v.normalise();
+        this.v.y = 0;
+        this.physics.onGround = true;
       }
+      else this.physics.onGround = false;
     }
   }
   
@@ -324,7 +326,9 @@ class PhysicsEngine
   deltaGoal; // optimisation var; don't bother
   gravityScale;
   
-  terminalV;
+  terminalV; // terminal velocity of sprite. not realistic
+  
+  onGround; // boolean
   
   sprite;
   
@@ -346,7 +350,9 @@ class PhysicsEngine
     if ( frameCount % this.deltaGoal != 0 ) return;
     
     if ( this.sprite.v.y > -this.terminalV )
-      this.sprite.v.y -= this.gravityScale * 15;    
+      this.sprite.v.y -= this.gravityScale * 15;
+    
+    if ( this.onGround ) this.sprite.v.y = 0;
   }
 }
 
@@ -429,7 +435,7 @@ function setup()
   
   // scene setup
   p = new Player(
-    new Vec2( 0, 0 ),
+    new Vec2( -50, 0 ),
     new Vec2( 20, 20 ),
     genTestTex(),
     new CircleCollider( 10 )
@@ -482,8 +488,12 @@ function genTestTex()
   //texbuf.background( 0 );
   texbuf.translate( texbuf.width/2, texbuf.height/2 );
   texbuf.noStroke();
+  
   texbuf.fill( randomCol() );
   texbuf.ellipse( 0, 0, texbuf.width, texbuf.height );
+  
+  texbuf.fill( 255 );
+  texbuf.ellipse( 0, 0, texbuf.width/5, texbuf.height/5 );
   
   return texbuf;
 }
