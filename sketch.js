@@ -213,8 +213,8 @@ class Sprite
       this.texbuf,
       temp.x - this.size.x/2,
       temp.y - this.size.y/2,
-      this.size.x,
-      this.size.y
+      //this.size.x,
+      //this.size.y
     );
     
     /*stroke( 0 );
@@ -353,7 +353,6 @@ class PhysicsEngine
   }
 }
 
-// TODO: use this class in collision detection
 class ColliderShape
 {
   vertices; // array
@@ -446,7 +445,7 @@ function preload()
 
 function setup()
 {
-  createCanvas( 600, 600 );
+  createCanvas( 800, 800 );
   
   // configurations
   frameRate( -1 );
@@ -463,7 +462,7 @@ function setup()
   p = new Player(
     new Vec2( -30, 0 ),
     new Vec2( 20, 20 ),
-    genTestTex(),
+    genTestTex( 20, 20 ),
     new CircleCollider( 10 )
   );
   
@@ -471,7 +470,7 @@ function setup()
     new Sprite(
       new Vec2( 0, -100 ),
       new Vec2( 80, 80 ),
-      genTestTex(),
+      genTestTex( 80, 80 ),
       new CircleCollider( 40 ),
       false
     )
@@ -511,9 +510,9 @@ player.pos: ${p.pos.toString()}`,
   );
 }
 
-function genTestTex()
+function genTestTex( w, h )
 {
-  var texbuf = createGraphics( 32, 32 );
+  var texbuf = createGraphics( w, h );
   //texbuf.background( 0 );
   texbuf.translate( texbuf.width/2, texbuf.height/2 );
   texbuf.noStroke();
