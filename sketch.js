@@ -139,21 +139,16 @@ class Sprite
   halfSize; // precomputed
   texbuf; // p5.Image
   
-  collider; // ? extends ColliderShape
-  
   active; // boolean; does this object move?
   physics;
   
-  constructor( pos, size, texbuf, collider, active = false )
+  constructor( pos, size, texbuf, active = false )
   {
     this.pos = pos;
     this.size = size;
     this.halfSize = this.size.divideScalar( 2 );
     this.texbuf = texbuf;
     this.v = new Vec2( 0, 0 );
-    
-    this.collider = collider;
-    this.collider.sprite = this;
     
     this.active = active;
     
@@ -212,7 +207,7 @@ class Sprite
     image(
       this.texbuf,
       temp.x - this.size.x/2,
-      temp.y - this.size.y/2,
+      temp.y - this.size.y/2
       //this.size.x,
       //this.size.y
     );
@@ -223,7 +218,78 @@ class Sprite
   }
 }
 
-class Player extends Sprite
+class Obstacle extends Sprite
+{
+  collider;
+  
+  constructor( pos, size, texbuf, collider, active = false )
+  {
+    super( pos, size, texbuf, active );
+    
+    this.collider = collider;
+    this.collider.sprite = this;
+  }
+  
+  onCollisionWithPlayer( player )
+  {
+    
+    // snap it to the surface of the collider
+    if ( !player.physics.prevOnGround )
+      player.v = player.v.normalise().multScalar( -1 );
+  }
+}
+
+class TrampolineObject extends Obstacle
+{
+  constructor( pos, size, texbuf, collider, active = false )
+  {
+    super( pos, size, texbuf, collider, active );
+  }
+  
+  onCollisionWithPlayer( player )
+  {
+    player.v = player.v.multScalar( -1.5 );
+  }
+}
+
+class MovingObject extends Obstacle
+{
+  constructor( pos, size, texbuf, collider )
+  {
+    super( pos, size, texbuf, collider, true );
+    
+    this.physics.gravityScale = 0;
+    this.v.x = -10;
+  }
+  
+  checkCollisionInsideBounds( xMin, xMax, yMin, yMax )
+  {
+    // check for screen bounds collision
+    if ( this.pos.x > xMax - this.halfSize.x )
+    {
+      this.pos.x = xMax - this.halfSize.x;
+      this.v.x = -this.v.x;
+    }
+    else if ( this.pos.x < xMin + this.halfSize.x )
+    {
+      this.pos.x = xMin + this.halfSize.y;
+      this.v.x = -this.v.x;
+    }
+    
+    if ( this.pos.y > yMax - this.halfSize.y )
+    {
+      this.pos.y = yMax - this.halfSize.y;
+      this.v.y = 0;
+    }
+    else if ( this.pos.y < yMin + this.halfSize.y )
+    {
+      this.pos.y = yMin + this.halfSize.y;
+      this.v.y = 0;
+    }
+  }
+}
+
+class Player extends Obstacle
 {
   speed;
   
@@ -290,11 +356,12 @@ class Player extends Sprite
     {
       //console.log( obstacle )
       //this.pos = new Vec2( 0, 200 );
-      if ( this.collider.testForCollision( obstacle.collider ) )
+      if (
+        obstacle instanceof Obstacle &&
+        this.collider.testForCollision( obstacle.collider )
+      )
       {
-        // snap it to the surface of the collider
-        if ( !this.physics.prevOnGround )
-          this.v = this.v.normalise().multScalar( -1 );
+        obstacle.onCollisionWithPlayer( this );
         
         this.physics.onGround = true;
       }
@@ -468,6 +535,12 @@ function setup()
   
   obstacles.push(
     new Sprite(
+      new Vec2( -300, -100 ),
+      new Vec2( 80, 80 ),
+      genTestTex( 80, 80 ),
+      false
+    ),
+    new MovingObject(
       new Vec2( 0, -100 ),
       new Vec2( 80, 80 ),
       genTestTex( 80, 80 ),
@@ -487,11 +560,8 @@ function draw()
   //image( tex, 0, 0)
   
   
-  
   for ( var obstacle of obstacles )
-  {
     obstacle.blit();
-  }
   
   p.blit();
   
