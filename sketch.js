@@ -621,8 +621,8 @@ function genTestTex( w, h )
 function randomCol()
 {
   return [
-    ceil(random() * 256),
-    ceil(random() * 256),
-    ceil(random() * 256)
+    ceil(random() * 255),
+    ceil(random() * 255),
+    ceil(random() * 255)
   ];
 }
