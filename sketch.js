@@ -314,13 +314,23 @@ class Player extends Obstacle
       this.v.x = this.speed;
       //console.log( "right" )
     }
-    else
+    else if ( !this.onGround )
     {
+      // friction
       // move v.x towards 0
       if ( this.v.x > 0 )
         this.v.x -= 10;
       else if ( this.v.x < 0 )
         this.v.x += 10;
+    }
+    else
+    {
+      // inertia
+      // move v.x towards 0
+      if ( this.v.x > 0 )
+        this.v.x -= 5;
+      else if ( this.v.x < 0 )
+        this.v.x += 5;
     }
     
     /*if ( keyIsDown( DOWN_ARROW ) || keyIsDown( 83 ) )
@@ -457,6 +467,8 @@ class ColliderShape
 
 class RectCollider extends ColliderShape
 {
+  size;
+  halfSize;
   constructor( width, height )
   {
     super(
@@ -468,7 +480,23 @@ class RectCollider extends ColliderShape
       ] 
     );
     
-    this.boundingSphereRadius = sqrt( width**2 + height**2 );
+    this.size = new Vec2( width, height );
+    this.halfSize = this.size.divideScalar( 2 );
+    
+    this.boundingSphereRadius = sqrt( (this.halfSize/2)**2 + (this.halfSize.y/2)**2 );
+  }
+  
+  testForCollision( other )
+  {
+    if ( /*this.boundingSphereCollision( other )*/true )
+    {
+      return (
+        this.sprite.pos.x < other.sprite.pos.x - other.halfSize.x &&
+        this.sprite.pos.x > other.sprite.pos.x + other.halfSize.x && 
+        this.sprite.pos.y < other.sprite.pos.y - other.halfSize.y &&
+        this.sprite.pos.y > other.sprite.pos.y + other.halfSize.y
+        );
+    }
   }
 }
 
@@ -534,17 +562,18 @@ function setup()
   );
   
   obstacles.push(
-    new Sprite(
+    new Obstacle(
       new Vec2( -300, -100 ),
       new Vec2( 80, 80 ),
       genTestTex( 80, 80 ),
+      new RectCollider( 80, 80 ),
       false
     ),
     new MovingObject(
       new Vec2( 0, -100 ),
       new Vec2( 80, 80 ),
       genTestTex( 80, 80 ),
-      new CircleCollider( 40 ),
+      new RectCollider( 80, 80 ),
       false
     )
   );
