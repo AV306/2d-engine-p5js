@@ -156,12 +156,6 @@ class Sprite
       this.physics = new PhysicsEngine( this );
   }
   
-  scale( val )
-  {
-    this.size = this.size.multScalar( val );
-    this.halfSize = this.size.divideScalar( 2 );
-  }
-  
   updatePos()
   {
     if ( this.active )
@@ -210,10 +204,6 @@ class Sprite
     
     var temp = this.pos.convertPos();
     
-    push();
-    
-    scale( this.size.x, this.size.y );
-    
     image(
       this.texbuf,
       temp.x - this.size.x/2,
@@ -221,8 +211,6 @@ class Sprite
       //this.size.x,
       //this.size.y
     );
-    
-    pop();
     
     /*stroke( 0 );
     fill( 255 );
@@ -247,7 +235,7 @@ class Obstacle extends Sprite
     
     // snap it to the surface of the collider
     if ( !player.physics.prevOnGround )
-      player.v = player.v.normalise().multScalar( -1 );
+      player.v = player.v.multScalar( -0.4);
   }
 }
 
@@ -266,12 +254,12 @@ class TrampolineObject extends Obstacle
 
 class MovingObject extends Obstacle
 {
-  constructor( pos, size, texbuf, collider )
+  constructor( pos, size, v, texbuf, collider, active )
   {
     super( pos, size, texbuf, collider, true );
     
-    this.physics.gravityScale = 0;
-    this.v.x = -10;
+    if ( !active ) this.physics.gravityScale = 0;
+    this.v = v;
   }
   
   checkCollisionInsideBounds( xMin, xMax, yMin, yMax )
@@ -280,23 +268,23 @@ class MovingObject extends Obstacle
     if ( this.pos.x > xMax - this.halfSize.x )
     {
       this.pos.x = xMax - this.halfSize.x;
-      this.v.x = -this.v.x;
+      this.v = this.v.multScalar( -1 );
     }
     else if ( this.pos.x < xMin + this.halfSize.x )
     {
       this.pos.x = xMin + this.halfSize.y;
-      this.v.x = -this.v.x;
+      this.v = this.v.multScalar( -1 );
     }
     
     if ( this.pos.y > yMax - this.halfSize.y )
     {
       this.pos.y = yMax - this.halfSize.y;
-      this.v.y = 0;
+      this.v = this.v.multScalar( -1 );
     }
     else if ( this.pos.y < yMin + this.halfSize.y )
     {
       this.pos.y = yMin + this.halfSize.y;
-      this.v.y = 0;
+      this.v = this.v.multScalar( -1 );
     }
   }
 }
@@ -326,38 +314,31 @@ class Player extends Obstacle
       this.v.x = this.speed;
       //console.log( "right" )
     }
-    else if ( !this.onGround )
+    else
     {
-      // friction
       // move v.x towards 0
       if ( this.v.x > 0 )
         this.v.x -= 10;
       else if ( this.v.x < 0 )
         this.v.x += 10;
     }
-    else
+    
+    /*if ( keyIsDown( DOWN_ARROW ) || keyIsDown( 83 ) )
     {
-      // inertia
-      // move v.x towards 0
-      if ( this.v.x > 0 )
-        this.v.x -= 5;
-      else if ( this.v.x < 0 )
-        this.v.x += 5;
+      this.v.y = -this.speed;
+      //console.log( "down" )
     }
+    else if ( keyIsDown( UP_ARROW ) || keyIsDown( 87 ) )
+    {
+      this.v.y = this.speed;
+      //console.log( "up" )
+    }
+    else this.v.y = 0;*/
     
     if ( keyIsDown( 32 ) || keyIsDown( 87 ) || keyIsDown( UP_ARROW ) )
     {
       // jump
       this.v.y += this.speed * 0.6;
-    }
-    
-    if ( keyIsDown( 219 ) )
-    {
-      this.scale( 2 );
-    }
-    else if ( keyIsDown( 221 ) )
-    {
-      this.scale( -2 );
     }
   }
   
@@ -476,8 +457,6 @@ class ColliderShape
 
 class RectCollider extends ColliderShape
 {
-  size;
-  halfSize;
   constructor( width, height )
   {
     super(
@@ -489,23 +468,7 @@ class RectCollider extends ColliderShape
       ] 
     );
     
-    this.size = new Vec2( width, height );
-    this.halfSize = this.size.divideScalar( 2 );
-    
-    this.boundingSphereRadius = sqrt( (this.halfSize/2)**2 + (this.halfSize.y/2)**2 );
-  }
-  
-  testForCollision( other )
-  {
-    if ( /*this.boundingSphereCollision( other )*/true )
-    {
-      return (
-        this.sprite.pos.x < other.sprite.pos.x - other.halfSize.x &&
-        this.sprite.pos.x > other.sprite.pos.x + other.halfSize.x && 
-        this.sprite.pos.y < other.sprite.pos.y - other.halfSize.y &&
-        this.sprite.pos.y > other.sprite.pos.y + other.halfSize.y
-        );
-    }
+    this.boundingSphereRadius = sqrt( width**2 + height**2 );
   }
 }
 
@@ -571,18 +534,25 @@ function setup()
   );
   
   obstacles.push(
-    new Obstacle(
+    new Sprite(
       new Vec2( -300, -100 ),
       new Vec2( 80, 80 ),
       genTestTex( 80, 80 ),
-      new RectCollider( 80, 80 ),
-      false
+      true
     ),
     new MovingObject(
       new Vec2( 0, -100 ),
       new Vec2( 80, 80 ),
+      new Vec2( 10, 0 ),
       genTestTex( 80, 80 ),
-      new RectCollider( 80, 80 ),
+      new CircleCollider( 40 ),
+      false
+    ),
+    new Obstacle(
+      new Vec2( 100, 40 ),
+      new Vec2( 100, 100 ),
+      genTestTex( 100, 100 ),
+      new CircleCollider( 50 ),
       false
     )
   );
@@ -590,7 +560,7 @@ function setup()
 
 function draw()
 {
-  background( 225 );
+  background( 255 );
   
   //line( 0, height/2, width, height/2 );
   //line( width/2, 0, width/2, height );
