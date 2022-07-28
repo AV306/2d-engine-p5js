@@ -247,7 +247,7 @@ class TrampolineObject extends Obstacle
   
   onCollisionWithPlayer( player )
   {
-    player.v = player.v.multScalar( -1.5 );
+    player.v = player.v.multScalar( -1 );
   }
 }
 
@@ -423,7 +423,7 @@ class PhysicsEngine
     if ( this.sprite.v.y > -this.terminalV && !this.onGround )
       this.sprite.v.y -= this.gravityScale * 15;
     
-    if ( !this.prevOnGround && this.onGround ) this.sprite.v.y = 0;
+    if ( /*!this.prevOnGround && */this.onGround ) this.sprite.v.y = 0;
   }
 }
 
