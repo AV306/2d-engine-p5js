@@ -156,12 +156,6 @@ class Sprite
       this.physics = new PhysicsEngine( this );
   }
   
-  scale( val )
-  {
-    this.size = this.size.multScalar( val );
-    this.halfSize = this.size.divideScalar( 2 );
-  }
-  
   updatePos()
   {
     if ( this.active )
@@ -212,7 +206,7 @@ class Sprite
     
     push();
     
-    scale( this.size.x, this.size.y );
+    //scale( this.size.x, this.size.y );
     
     image(
       this.texbuf,
@@ -349,15 +343,6 @@ class Player extends Obstacle
     {
       // jump
       this.v.y += this.speed * 0.6;
-    }
-    
-    if ( keyIsDown( 219 ) )
-    {
-      this.scale( 2 );
-    }
-    else if ( keyIsDown( 221 ) )
-    {
-      this.scale( -2 );
     }
   }
   
@@ -497,7 +482,7 @@ class RectCollider extends ColliderShape
   
   testForCollision( other )
   {
-    if ( /*this.boundingSphereCollision( other )*/true )
+    if ( this.boundingSphereCollision( other ) )
     {
       return (
         this.sprite.pos.x < other.sprite.pos.x - other.halfSize.x &&
