@@ -232,10 +232,9 @@ class Obstacle extends Sprite
   
   onCollisionWithPlayer( player )
   {
-    
     // snap it to the surface of the collider
-    //if ( !player.physics.prevOnGround )
-      //player.v = player.v.normalise().multScalar( -1 );
+    if ( !player.physics.prevOnGround )
+      player.v = player.v.normalise().multScalar( -1 );
   }
 }
 
@@ -258,7 +257,7 @@ class MovingObject extends Obstacle
   {
     super( pos, size, texbuf, collider, true );
     
-    if ( !active ) this.physics.gravityScale = 0;
+    /*if ( !active )*/ this.physics.gravityScale = 0;
     this.v = v;
   }
   
@@ -286,6 +285,12 @@ class MovingObject extends Obstacle
       this.pos.y = yMin + this.halfSize.y;
       this.v = this.v.multScalar( -1 );
     }
+  }
+  
+  onCollisionWithPlayer( player )
+  {
+    //player.v = new Vec2( 0, 0 );
+    super.onCollisionWithPlayer( player );
   }
 }
 
@@ -364,6 +369,8 @@ class Player extends Obstacle
         obstacle.onCollisionWithPlayer( this );
         
         this.physics.onGround = true;
+        
+        break;
       }
       else this.physics.onGround = false;
     }
@@ -541,9 +548,9 @@ function setup()
       true
     ),
     new MovingObject(
-      new Vec2( 0, -100 ),
+      new Vec2( -30, -100 ),
       new Vec2( 80, 80 ),
-      new Vec2( 10, 0 ),
+      new Vec2( 0, 0 ),
       genTestTex( 80, 80 ),
       new CircleCollider( 40 ),
       false
