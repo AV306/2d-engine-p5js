@@ -613,7 +613,8 @@ function draw()
     `FPS: ${currentFps}
 player.onGround: ${p.physics.onGround} (${p.physics.prevOnGround})
 player.v: ${p.v.toString()}
-player.pos: ${p.pos.toString()}`,
+player.pos: ${p.pos.toString()}
+player.size: ${p.size.toString()}`,
     0, 0
   );
 }
