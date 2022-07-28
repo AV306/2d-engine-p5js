@@ -234,8 +234,8 @@ class Obstacle extends Sprite
   {
     
     // snap it to the surface of the collider
-    if ( !player.physics.prevOnGround )
-      player.v = player.v.normalise().multScalar( -1 );
+    //if ( !player.physics.prevOnGround )
+      //player.v = player.v.normalise().multScalar( -1 );
   }
 }
 
