@@ -550,7 +550,7 @@ function setup()
     new MovingObject(
       new Vec2( -30, -100 ),
       new Vec2( 80, 80 ),
-      new Vec2( 0, 0 ),
+      new Vec2( 10, 10 ),
       genTestTex( 80, 80 ),
       new CircleCollider( 40 ),
       false
@@ -560,6 +560,13 @@ function setup()
       new Vec2( 100, 100 ),
       genTestTex( 100, 100 ),
       new CircleCollider( 50 ),
+      false
+    ),
+    new TrampolineObject(
+      new Vec2( 0, 0 ),
+      new Vec2( 80, 80 ),
+      genTestTex( 80, 80 ),
+      new CircleCollider( 40 ),
       false
     )
   );
@@ -614,8 +621,8 @@ function genTestTex( w, h )
 function randomCol()
 {
   return [
-    floor(random() * 256),
-    floor(random() * 256),
-    floor(random() * 256)
+    ceil(random() * 256),
+    ceil(random() * 256),
+    ceil(random() * 256)
   ];
 }
