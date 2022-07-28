@@ -156,6 +156,12 @@ class Sprite
       this.physics = new PhysicsEngine( this );
   }
   
+  scale( val )
+  {
+    this.size = this.size.multScalar( val );
+    this.halfSize = this.size.divideScalar( 2 );
+  }
+  
   updatePos()
   {
     if ( this.active )
@@ -204,6 +210,10 @@ class Sprite
     
     var temp = this.pos.convertPos();
     
+    push();
+    
+    scale( this.size.x, this.size.y );
+    
     image(
       this.texbuf,
       temp.x - this.size.x/2,
@@ -211,6 +221,8 @@ class Sprite
       //this.size.x,
       //this.size.y
     );
+    
+    pop();
     
     /*stroke( 0 );
     fill( 255 );
@@ -333,22 +345,19 @@ class Player extends Obstacle
         this.v.x += 5;
     }
     
-    /*if ( keyIsDown( DOWN_ARROW ) || keyIsDown( 83 ) )
-    {
-      this.v.y = -this.speed;
-      //console.log( "down" )
-    }
-    else if ( keyIsDown( UP_ARROW ) || keyIsDown( 87 ) )
-    {
-      this.v.y = this.speed;
-      //console.log( "up" )
-    }
-    else this.v.y = 0;*/
-    
     if ( keyIsDown( 32 ) || keyIsDown( 87 ) || keyIsDown( UP_ARROW ) )
     {
       // jump
       this.v.y += this.speed * 0.6;
+    }
+    
+    if ( keyIsDown( 219 ) )
+    {
+      this.scale( 2 );
+    }
+    else if ( keyIsDown( 221 ) )
+    {
+      this.scale( -2 );
     }
   }
   
@@ -581,7 +590,7 @@ function setup()
 
 function draw()
 {
-  background( 255 );
+  background( 225 );
   
   //line( 0, height/2, width, height/2 );
   //line( width/2, 0, width/2, height );
