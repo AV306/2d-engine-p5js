@@ -17,7 +17,7 @@ class Vec2
     this.x = x;
     this.y = y;
     
-    this.length = sqrt( this.x**2 + this.y**2 );
+    this.length = Math.sqrt( this.x**2 + this.y**2 );
   }
   
   addVec( other )
@@ -83,7 +83,7 @@ class Vec2
   
   angleFrom( other )
   {
-    return acos( this.dot( other ) / (this.length * other.length ) );
+    return Math.acos( this.dot( other ) / (this.length * other.length ) );
   }
   
   magnitude()
